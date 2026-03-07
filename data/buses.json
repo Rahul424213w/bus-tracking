@@ -1,0 +1,34 @@
+[
+  {
+    "id": "bus2",
+    "name": "Bus 2 – South Route",
+    "route": "south",
+    "lat": 15.8625695,
+    "lng": 74.4665375,
+    "status": "running",
+    "speed": 0,
+    "lastUpdate": 1772897455858,
+    "driverSocket": "sdGjVK8jaIN67AU3AAAD"
+  },
+  {
+    "id": "bus3",
+    "name": "Bus 3 – East Route",
+    "route": "east",
+    "lat": 15.8625695,
+    "lng": 74.4665375,
+    "status": "stopped",
+    "speed": 0,
+    "lastUpdate": null
+  },
+  {
+    "id": "bus1",
+    "name": "Bus 1 - West Route",
+    "route": "north",
+    "lat": 15.8625695,
+    "lng": 74.4665375,
+    "status": "stopped",
+    "speed": 0,
+    "lastUpdate": 1772896815966,
+    "driverSocket": "jzbRTeG5ALQhtAGNAAAU"
+  }
+]

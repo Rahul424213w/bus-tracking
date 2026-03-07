@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Driver Dashboard – Bus Tracker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body style="display:flex;flex-direction:column;height:100vh;">
+  <!-- Top bar -->
+  <div class="driver-bar">
+    <span style="font-size:22px;">🚗</span>
+    <h1>Driver Dashboard</h1>
+
+    <select class="input" id="busSelect" style="width:200px;" onchange="onBusChange()">
+      <option value="">— Select your bus —</option>
+    </select>
+
+    <button class="btn btn-success" id="startBtn" onclick="startTrip()" disabled>
+      ▶ Start Trip
+    </button>
+    <button class="btn btn-danger"  id="stopBtn"  onclick="stopTrip()"  disabled>
+      ■ End Trip
+    </button>
+
+    <div class="info-stat" style="margin-left:16px;">
+      <span class="label">GPS Signal</span>
+      <span class="value" id="gpsStatus">—</span>
+    </div>
+    <div class="info-stat">
+      <span class="label">Speed</span>
+      <span class="value" id="driverSpeed">—</span>
+    </div>
+
+    <button class="btn btn-ghost" onclick="logout()" style="margin-left:auto;">
+      Logout
+    </button>
+  </div>
+
+  <div id="map" style="flex:1;"></div>
+
+  <div id="toast-container"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/driver.js"></script>
+</body>
+</html>

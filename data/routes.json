@@ -1,0 +1,65 @@
+{
+  "north": {
+    "name": "North Route",
+    "color": "#3b82f6",
+    "stops": [
+      {
+        "name": "College Gate",
+        "lat": 15.8625695,
+        "lng": 74.4665375
+      },
+      {
+        "name": "Railway Station",
+        "lat": 15.865,
+        "lng": 74.47
+      },
+      {
+        "name": "City Bus Stand",
+        "lat": 15.868,
+        "lng": 74.473
+      }
+    ]
+  },
+  "south": {
+    "name": "South Route",
+    "color": "#10b981",
+    "stops": [
+      {
+        "name": "College Gate",
+        "lat": 15.8625695,
+        "lng": 74.4665375
+      },
+      {
+        "name": "Market Circle",
+        "lat": 15.86,
+        "lng": 74.464
+      },
+      {
+        "name": "Hospital Road",
+        "lat": 15.857,
+        "lng": 74.461
+      }
+    ]
+  },
+  "east": {
+    "name": "East Route",
+    "color": "#f59e0b",
+    "stops": [
+      {
+        "name": "College Gate",
+        "lat": 15.8625695,
+        "lng": 74.4665375
+      },
+      {
+        "name": "Tech Park",
+        "lat": 15.864,
+        "lng": 74.472
+      },
+      {
+        "name": "IT Hub",
+        "lat": 15.866,
+        "lng": 74.476
+      }
+    ]
+  }
+}

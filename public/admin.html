@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard – Bus Tracker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Tab system ── */
+    .tab-bar {
+      display: flex; gap: 4px; padding: 14px 24px 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .tab-btn {
+      padding: 9px 20px; border-radius: 8px 8px 0 0;
+      border: 1px solid transparent; border-bottom: none;
+      background: transparent; color: var(--muted);
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all .18s; display: flex; align-items: center; gap: 6px;
+    }
+    .tab-btn:hover  { color: var(--text); background: var(--surface2); }
+    .tab-btn.active {
+      background: var(--bg); color: var(--text);
+      border-color: var(--border); border-bottom-color: var(--bg);
+      margin-bottom: -1px;
+    }
+    .tab-panel { display: none; flex: 1; overflow: hidden; }
+    .tab-panel.active { display: flex; flex-direction: column; }
+
+    /* ── Route editor layout ── */
+    .route-editor-layout {
+      display: grid; grid-template-columns: 360px 1fr;
+      flex: 1; overflow: hidden;
+    }
+    .route-panel {
+      background: var(--surface); border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .route-panel-inner { flex: 1; overflow-y: auto; padding: 16px; }
+    .route-map-wrap { position: relative; overflow: hidden; }
+    #routeMap { width: 100%; height: 100%; }
+
+    .route-list-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px; cursor: pointer;
+      border: 2px solid transparent; transition: all .18s; margin-bottom: 6px;
+    }
+    .route-list-item:hover  { background: var(--surface2); }
+    .route-list-item.active { border-color: var(--accent); background: rgba(59,130,246,.08); }
+    .route-color-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .route-list-info { flex: 1; min-width: 0; }
+    .route-list-name { font-size: 13px; font-weight: 600; }
+    .route-list-meta { font-size: 11px; color: var(--muted); }
+
+    /* Stop items in editor */
+    .stop-item {
+      display: flex; align-items: center; gap: 8px;
+      background: var(--surface2); border-radius: 8px;
+      padding: 8px 10px; margin-bottom: 6px;
+    }
+    .stop-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .stop-name-input {
+      flex: 1; background: transparent; border: none; border-bottom: 1px solid var(--border);
+      color: var(--text); font-size: 12px; outline: none; padding: 2px 4px;
+    }
+    .stop-name-input:focus { border-bottom-color: var(--accent); }
+    .stop-coords { font-size: 10px; color: var(--muted); white-space: nowrap; }
+    .stop-del-btn {
+      background: none; border: none; color: var(--red);
+      cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 4px;
+    }
+    .stop-del-btn:hover { opacity: .7; }
+
+    /* Map click hint */
+    .map-hint {
+      position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+      background: rgba(15,23,42,.88); border: 1px solid var(--accent);
+      border-radius: 8px; padding: 7px 14px; font-size: 12px; font-weight: 600;
+      color: var(--text); z-index: 1000; pointer-events: none; white-space: nowrap;
+      backdrop-filter: blur(4px);
+    }
+    .map-hint.hidden { display: none; }
+
+    /* Color swatches */
+    .color-swatches { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .swatch {
+      width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent; transition: transform .15s, border-color .15s;
+    }
+    .swatch:hover    { transform: scale(1.2); }
+    .swatch.selected { border-color: white; }
+
+    .section-divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+    /* Assign row */
+    .assign-row { display: flex; gap: 8px; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+<div class="admin-layout">
+
+  <!-- ── Sidebar ── -->
+  <div class="admin-sidebar">
+    <div class="sidebar-header">
+      <span class="logo">🛠️</span>
+      <div><h1>Admin Panel</h1><p>Fleet Management</p></div>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Add New Bus</h2>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">Bus ID</label>
+        <input class="input" id="newBusId" placeholder="e.g. bus4">
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">Display Name</label>
+        <input class="input" id="newBusName" placeholder="e.g. Bus 4 – West Route">
+      </div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <label class="form-label">Assign Route</label>
+        <select class="input" id="newBusRoute">
+          <option value="">— None —</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" style="width:100%;" onclick="addBus()">+ Add Bus</button>
+    </div>
+
+    <div class="sidebar-section">
+      <h2>Remove Bus</h2>
+      <div style="display:flex;gap:8px;">
+        <input class="input" id="removeBusId" placeholder="Bus ID">
+        <button class="btn btn-danger" onclick="removeBus()">Remove</button>
+      </div>
+    </div>
+
+    <div class="sidebar-section" style="flex:1;">
+      <h2>Activity Log</h2>
+      <div class="log-box" id="logBox"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <button class="btn btn-ghost" onclick="logout()"
+        style="width:100%;justify-content:center;">Logout</button>
+    </div>
+  </div>
+
+  <!-- ── Main ── -->
+  <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+
+    <div class="admin-topbar">
+      <span style="font-size:20px;">🚌</span>
+      <h1>Fleet Overview</h1>
+      <div style="margin-left:auto;">
+        <span style="font-size:13px;color:var(--muted);">
+          Last sync: <span id="syncTime">—</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tab-bar">
+      <button class="tab-btn active" id="tabBtnFleet" onclick="switchTab('fleet')">
+        🚌 Fleet
+      </button>
+      <button class="tab-btn" id="tabBtnRoutes" onclick="switchTab('routes')">
+        🗺️ Route Manager
+      </button>
+    </div>
+
+    <!-- ═══ FLEET TAB ═══ -->
+    <div id="tab-fleet" class="tab-panel active" style="overflow-y:auto;">
+      <div class="admin-main">
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="num" id="statTotal">0</div><div class="lbl">Total Buses</div>
+          </div>
+          <div class="stat-card">
+            <div class="num" style="color:var(--green);" id="statRunning">0</div>
+            <div class="lbl">Running Now</div>
+          </div>
+          <div class="stat-card">
+            <div class="num" style="color:var(--red);" id="statStopped">0</div>
+            <div class="lbl">Stopped</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:24px;padding:0;overflow:hidden;height:320px;">
+          <div id="map" style="width:100%;height:100%;"></div>
+        </div>
+
+        <div class="card">
+          <h2 style="margin-bottom:16px;font-size:15px;">All Buses</h2>
+          <table class="bus-table">
+            <thead>
+              <tr>
+                <th>ID</th><th>Name</th><th>Route</th><th>Status</th>
+                <th>Coordinates</th><th>Last Update</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="busTableBody">
+              <tr><td colspan="7" style="color:var(--muted);padding:20px;">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ ROUTES TAB ═══ -->
+    <div id="tab-routes" class="tab-panel">
+      <div class="route-editor-layout">
+
+        <!-- Left panel -->
+        <div class="route-panel">
+          <div class="route-panel-inner">
+
+            <!-- Saved routes list -->
+            <div style="display:flex;align-items:center;
+                        justify-content:space-between;margin-bottom:10px;">
+              <h2 style="font-size:11px;font-weight:700;text-transform:uppercase;
+                         letter-spacing:.08em;color:var(--muted);">Saved Routes</h2>
+              <button class="btn btn-primary"
+                style="padding:5px 12px;font-size:12px;" onclick="startNewRoute()">
+                + New Route
+              </button>
+            </div>
+            <div id="routeList">
+              <p style="color:var(--muted);font-size:13px;">No routes saved yet.</p>
+            </div>
+
+            <hr class="section-divider">
+
+            <!-- Route editor form (hidden until new/edit clicked) -->
+            <div id="routeEditorForm" style="display:none;">
+              <h2 style="font-size:11px;font-weight:700;text-transform:uppercase;
+                         letter-spacing:.08em;color:var(--accent);margin-bottom:12px;"
+                id="editorTitle">✏️ New Route</h2>
+
+              <div class="form-group" style="margin-bottom:10px;">
+                <label class="form-label">Route ID</label>
+                <input class="input" id="editRouteId" placeholder="e.g. west">
+                <span style="font-size:10px;color:var(--muted);">
+                  Lowercase, no spaces. Cannot be changed after saving.
+                </span>
+              </div>
+              <div class="form-group" style="margin-bottom:10px;">
+                <label class="form-label">Route Name</label>
+                <input class="input" id="editRouteName" placeholder="e.g. West Campus Route">
+              </div>
+              <div class="form-group" style="margin-bottom:4px;">
+                <label class="form-label">Route Colour</label>
+                <div class="color-swatches" id="colorSwatches"></div>
+                <input type="color" id="editRouteColor" value="#3b82f6"
+                  style="margin-top:8px;width:44px;height:26px;border:none;
+                         background:none;cursor:pointer;padding:0;border-radius:4px;"
+                  oninput="onColorInput(this.value)">
+              </div>
+
+              <hr class="section-divider">
+
+              <div style="display:flex;align-items:center;
+                          justify-content:space-between;margin-bottom:8px;">
+                <label class="form-label" style="margin:0;">
+                  Stops
+                  <span style="color:var(--muted);font-weight:400;font-size:11px;">
+                    — click map to add
+                  </span>
+                </label>
+                <span style="font-size:11px;color:var(--muted);" id="stopCount">0 stops</span>
+              </div>
+
+              <div id="stopList" style="max-height:220px;overflow-y:auto;"></div>
+
+              <div style="display:flex;gap:8px;margin-top:14px;">
+                <button class="btn btn-success" style="flex:1;" onclick="saveRoute()">
+                  💾 Save Route
+                </button>
+                <button class="btn btn-ghost" onclick="cancelEdit()">Cancel</button>
+              </div>
+            </div>
+
+            <hr class="section-divider">
+
+            <!-- Assign route to bus -->
+            <div>
+              <h2 style="font-size:11px;font-weight:700;text-transform:uppercase;
+                         letter-spacing:.08em;color:var(--muted);margin-bottom:10px;">
+                Assign Route to Bus
+              </h2>
+              <div class="assign-row">
+                <select class="input" id="assignBusSelect" style="flex:1;">
+                  <option value="">Select bus…</option>
+                </select>
+                <select class="input" id="assignRouteSelect" style="flex:1;">
+                  <option value="">Select route…</option>
+                </select>
+              </div>
+              <button class="btn btn-primary" style="width:100%;" onclick="assignRoute()">
+                ✅ Assign Route
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Right: route map -->
+        <div class="route-map-wrap">
+          <div id="routeMap"></div>
+          <div class="map-hint hidden" id="mapHint">
+            🖱️ Click anywhere on the map to add a stop
+          </div>
+        </div>
+
+      </div>
+    </div><!-- end routes tab -->
+
+  </div><!-- end main -->
+</div><!-- end admin-layout -->
+
+<div id="toast-container"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

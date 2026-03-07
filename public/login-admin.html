@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Login – Bus Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="login-page">
+    <div class="login-box">
+      <div class="logo-big">🛠️</div>
+      <h1>Admin Login</h1>
+      <p>Authorized personnel only</p>
+
+      <div class="form-group">
+        <label class="form-label" for="pass">Admin Password</label>
+        <input class="input" id="pass" type="password" placeholder="Enter admin password"
+               autocomplete="current-password">
+      </div>
+
+      <button class="login-btn" id="loginBtn" onclick="login()">Sign In</button>
+      <div class="error-msg" id="err"></div>
+      <a class="back-link" href="index.html">← Back to Home</a>
+    </div>
+  </div>
+
+  <script>
+    if (sessionStorage.getItem("adminToken")) location.href = "admin.html";
+
+    async function login() {
+      const pass = document.getElementById("pass").value;
+      const btn  = document.getElementById("loginBtn");
+      const err  = document.getElementById("err");
+
+      if (!pass) { err.textContent = "Please enter a password."; return; }
+
+      btn.textContent = "Signing in…";
+      btn.disabled = true;
+      err.textContent = "";
+
+      try {
+        const res  = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role: "admin", password: pass })
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+          sessionStorage.setItem("adminToken", data.token);
+          location.href = "admin.html";
+        } else {
+          err.textContent = "❌ " + (data.error || "Invalid credentials");
+          btn.textContent = "Sign In";
+          btn.disabled = false;
+        }
+      } catch (e) {
+        err.textContent = "❌ Server error. Try again.";
+        btn.textContent = "Sign In";
+        btn.disabled = false;
+      }
+    }
+
+    document.getElementById("pass")
+      .addEventListener("keydown", e => e.key === "Enter" && login());
+  </script>
+</body>
+</html>

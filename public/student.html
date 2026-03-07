@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student – Bus Tracker</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo">🚌</span>
+        <div>
+          <h1>Bus Tracker</h1>
+          <p>Live Fleet View</p>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h2>Active Buses</h2>
+        <div id="busList">
+          <p style="color:var(--muted);font-size:13px;">Connecting…</p>
+        </div>
+      </div>
+
+      <div class="sidebar-section" style="margin-top:auto;">
+        <a href="index.html" class="btn btn-ghost" style="width:100%;justify-content:center;">
+          ← Home
+        </a>
+      </div>
+    </div>
+
+    <!-- Map + info -->
+    <div class="map-wrap" style="display:flex;flex-direction:column;">
+      <div id="map" style="flex:1;"></div>
+      <div class="info-bar">
+        <div class="info-stat">
+          <span class="label">Selected Bus</span>
+          <span class="value" id="busName">—</span>
+        </div>
+        <div class="info-stat">
+          <span class="label">Status</span>
+          <span class="value" id="status">—</span>
+        </div>
+        <div class="info-stat">
+          <span class="label">Speed</span>
+          <span class="value" id="speed">—</span>
+        </div>
+        <div class="info-stat">
+          <span class="label">Distance to Stop</span>
+          <span class="value" id="dist">—</span>
+        </div>
+        <div class="info-stat">
+          <span class="label">ETA</span>
+          <span class="value" id="eta">—</span>
+        </div>
+        <div class="info-stat">
+          <span class="label">Last Update</span>
+          <span class="value" id="lastUpdate">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="js/student.js"></script>
+</body>
+</html>
