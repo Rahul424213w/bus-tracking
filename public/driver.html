@@ -3,47 +3,136 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Driver Dashboard – Bus Tracker</title>
+  <title>BusGo – Driver Dashboard</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Trip control panel ── */
+    .trip-panel {
+      position: absolute; top: 76px; right: 16px; z-index: 600;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-lg);
+      padding: 20px; width: 280px;
+      box-shadow: var(--shadow-lg);
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .trip-panel-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 13px; font-weight: 700; color: var(--text-3);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 2px;
+    }
+    .trip-stat-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 12px; background: var(--surface2);
+      border-radius: var(--radius-sm); border: 1px solid var(--border);
+    }
+    .trip-stat-label { font-size: 11px; color: var(--text-3); }
+    .trip-stat-val { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; }
+
+    /* ── Active trip indicator ── */
+    .trip-active-banner {
+      background: var(--green-dim);
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; font-weight: 600; color: var(--green);
+    }
+
+    /* ── Bottom speedometer ── */
+    .speed-display {
+      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+      z-index: 600; background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-xl); padding: 12px 32px;
+      box-shadow: var(--shadow);
+      display: flex; align-items: baseline; gap: 4px;
+      display: none;
+    }
+    .speed-display.show { display: flex; }
+    .speed-num {
+      font-family: 'Sora', sans-serif;
+      font-size: 42px; font-weight: 800;
+      letter-spacing: -2px; line-height: 1;
+    }
+    .speed-unit { font-size: 14px; color: var(--text-3); font-weight: 600; }
+  </style>
 </head>
-<body style="display:flex;flex-direction:column;height:100vh;">
-  <!-- Top bar -->
-  <div class="driver-bar">
-    <span style="font-size:22px;">🚗</span>
+<body>
+<div class="driver-layout">
+
+  <!-- ── Top bar ── -->
+  <div class="driver-topbar">
+    <div class="logo-mark">🚌</div>
     <h1>Driver Dashboard</h1>
 
-    <select class="input" id="busSelect" style="width:200px;" onchange="onBusChange()">
+    <select class="input" id="busSelect" style="width:220px;" onchange="onBusChange()">
       <option value="">— Select your bus —</option>
     </select>
 
     <button class="btn btn-success" id="startBtn" onclick="startTrip()" disabled>
       ▶ Start Trip
     </button>
-    <button class="btn btn-danger"  id="stopBtn"  onclick="stopTrip()"  disabled>
+    <button class="btn btn-danger" id="stopBtn" onclick="stopTrip()" disabled style="margin-left:4px;">
       ■ End Trip
     </button>
-
-    <div class="info-stat" style="margin-left:16px;">
-      <span class="label">GPS Signal</span>
-      <span class="value" id="gpsStatus">—</span>
-    </div>
-    <div class="info-stat">
-      <span class="label">Speed</span>
-      <span class="value" id="driverSpeed">—</span>
-    </div>
 
     <button class="btn btn-ghost" onclick="logout()" style="margin-left:auto;">
       Logout
     </button>
   </div>
 
-  <div id="map" style="flex:1;"></div>
+  <!-- ── Map ── -->
+  <div style="flex:1;position:relative;overflow:hidden;">
+    <div id="map" style="width:100%;height:100%;"></div>
 
-  <div id="toast-container"></div>
+    <!-- Trip panel -->
+    <div class="trip-panel" id="tripPanel">
+      <div>
+        <div class="trip-panel-title">Trip Status</div>
+      </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="js/driver.js"></script>
+      <div class="trip-active-banner" id="tripBanner" style="display:none;">
+        <div class="live-dot"></div>
+        <span>Sharing location live</span>
+      </div>
+
+      <div class="trip-stat-row">
+        <span class="trip-stat-label">GPS Signal</span>
+        <span class="trip-stat-val" id="gpsStatus">—</span>
+      </div>
+      <div class="trip-stat-row">
+        <span class="trip-stat-label">Current Speed</span>
+        <span class="trip-stat-val" id="driverSpeed">— km/h</span>
+      </div>
+      <div class="trip-stat-row">
+        <span class="trip-stat-label">Coordinates</span>
+        <span class="trip-stat-val" id="driverCoords" style="font-size:11px;">—</span>
+      </div>
+      <div class="trip-stat-row">
+        <span class="trip-stat-label">Duration</span>
+        <span class="trip-stat-val" id="driverDuration">—</span>
+      </div>
+      <div class="trip-stat-row">
+        <span class="trip-stat-label">Selected Bus</span>
+        <span class="trip-stat-val" id="driverBusLabel">—</span>
+      </div>
+    </div>
+
+    <!-- Speedometer -->
+    <div class="speed-display" id="speedDisplay">
+      <span class="speed-num" id="speedBig">0</span>
+      <span class="speed-unit">km/h</span>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/driver.js"></script>
 </body>
 </html>

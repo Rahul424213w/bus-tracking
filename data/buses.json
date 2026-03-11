@@ -5,10 +5,10 @@
     "route": "south",
     "lat": 15.8625695,
     "lng": 74.4665375,
-    "status": "running",
+    "status": "stopped",
     "speed": 0,
-    "lastUpdate": 1772897455858,
-    "driverSocket": "sdGjVK8jaIN67AU3AAAD"
+    "lastUpdate": 1772984359741,
+    "driverSocket": "fOkLj7eLFQpio1_rAAAJ"
   },
   {
     "id": "bus3",
@@ -24,11 +24,11 @@
     "id": "bus1",
     "name": "Bus 1 - West Route",
     "route": "north",
-    "lat": 15.8625695,
-    "lng": 74.4665375,
-    "status": "stopped",
+    "lat": 15.8624815,
+    "lng": 74.46656,
+    "status": "running",
     "speed": 0,
-    "lastUpdate": 1772896815966,
-    "driverSocket": "jzbRTeG5ALQhtAGNAAAU"
+    "lastUpdate": 1773252748486,
+    "driverSocket": "trlEmWeSQvif9X7sAAAD"
   }
 ]

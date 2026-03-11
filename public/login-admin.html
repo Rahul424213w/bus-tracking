@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Login – Bus Tracker</title>
+  <title>BusGo – Admin Login</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="login-page">
     <div class="login-box">
-      <div class="logo-big">🛠️</div>
-      <h1>Admin Login</h1>
-      <p>Authorized personnel only</p>
+      <div class="login-logo">🛠️</div>
+      <h1>Admin Portal</h1>
+      <p class="subtitle">Authorized fleet management access</p>
 
       <div class="form-group">
         <label class="form-label" for="pass">Admin Password</label>
@@ -19,7 +19,9 @@
                autocomplete="current-password">
       </div>
 
-      <button class="login-btn" id="loginBtn" onclick="login()">Sign In</button>
+      <button class="login-btn" id="loginBtn" onclick="login()">
+        Sign In →
+      </button>
       <div class="error-msg" id="err"></div>
       <a class="back-link" href="index.html">← Back to Home</a>
     </div>
@@ -33,11 +35,15 @@
       const btn  = document.getElementById("loginBtn");
       const err  = document.getElementById("err");
 
-      if (!pass) { err.textContent = "Please enter a password."; return; }
+      if (!pass) {
+        err.textContent = "Please enter a password.";
+        err.classList.add("show");
+        return;
+      }
 
-      btn.textContent = "Signing in…";
+      btn.innerHTML = '<span class="spinner"></span> Signing in…';
       btn.disabled = true;
-      err.textContent = "";
+      err.classList.remove("show");
 
       try {
         const res  = await fetch("/api/login", {
@@ -49,15 +55,18 @@
 
         if (data.ok) {
           sessionStorage.setItem("adminToken", data.token);
-          location.href = "admin.html";
+          btn.innerHTML = "✓ Success!";
+          setTimeout(() => location.href = "admin.html", 300);
         } else {
           err.textContent = "❌ " + (data.error || "Invalid credentials");
-          btn.textContent = "Sign In";
+          err.classList.add("show");
+          btn.textContent = "Sign In →";
           btn.disabled = false;
         }
       } catch (e) {
         err.textContent = "❌ Server error. Try again.";
-        btn.textContent = "Sign In";
+        err.classList.add("show");
+        btn.textContent = "Sign In →";
         btn.disabled = false;
       }
     }

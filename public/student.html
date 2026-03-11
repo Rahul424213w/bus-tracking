@@ -3,72 +3,255 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Student – Bus Tracker</title>
+  <title>BusGo – Live Tracking</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* ── Search bar overlay ── */
+    .search-bar {
+      position: absolute; top: 16px; left: 16px; right: 16px; z-index: 600;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .search-input-wrap {
+      flex: 1; position: relative;
+    }
+    .search-input-icon {
+      position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+      font-size: 16px; pointer-events: none;
+    }
+    .search-input {
+      background: var(--surface);
+      border: 1.5px solid var(--border2);
+      color: var(--text); border-radius: var(--radius);
+      padding: 12px 14px 12px 40px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px; width: 100%;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { outline: none; border-color: var(--accent); }
+    .search-input::placeholder { color: var(--text-3); }
+
+    /* ── Sidebar header extra ── */
+    .sidebar-header .connection-status {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: var(--text-3);
+    }
+
+    /* ── Quick stats strip in sidebar ── */
+    .quick-stats {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 8px; padding: 12px;
+    }
+    .quick-stat {
+      background: var(--surface2); border-radius: var(--radius-sm);
+      padding: 10px; border: 1px solid var(--border);
+      text-align: center;
+    }
+    .quick-stat .qs-val {
+      font-family: 'Sora', sans-serif;
+      font-size: 22px; font-weight: 800; line-height: 1;
+    }
+    .quick-stat .qs-lbl { font-size: 10px; color: var(--text-3); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+    /* ── No buses state ── */
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 32px 16px; gap: 10px; color: var(--text-3); text-align: center;
+    }
+    .empty-state .empty-icon { font-size: 36px; opacity: 0.4; }
+    .empty-state .empty-title { font-weight: 600; font-size: 14px; color: var(--text-2); }
+    .empty-state .empty-sub { font-size: 12px; }
+
+    /* ── Selected bus detail card in sidebar ── */
+    .selected-bus-card {
+      margin: 8px 12px;
+      background: var(--surface2);
+      border: 1.5px solid rgba(108,99,255,0.3);
+      border-radius: var(--radius);
+      padding: 14px; display: none;
+    }
+    .selected-bus-card.show { display: block; }
+    .sbc-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .sbc-name { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px; }
+    .sbc-route { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+    .sbc-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .sbc-stat { background: var(--surface3); border-radius: 8px; padding: 8px 10px; }
+    .sbc-stat-label { font-size: 9px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
+    .sbc-stat-value { font-family: 'Sora', sans-serif; font-size: 15px; font-weight: 700; margin-top: 2px; }
+    .sbc-eta-bar { margin-top: 10px; }
+    .sbc-eta-label { font-size: 10px; color: var(--text-3); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .eta-track { height: 4px; background: var(--surface3); border-radius: 999px; overflow: hidden; }
+    .eta-fill { height: 100%; background: var(--accent-g); border-radius: 999px; transition: width 0.5s; }
+
+    /* ── Map locate button ── */
+    .map-locate-btn {
+      position: absolute; bottom: 130px; right: 16px; z-index: 600;
+    }
+
+    /* ── Info panel stops ── */
+    .info-panel { padding: 14px 20px 18px; }
+    .info-panel-top {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border);
+    }
+    .info-panel-stats { display: flex; gap: 0; flex: 1; }
+
+    /* ── Route stops in info panel ── */
+    .stops-strip {
+      display: flex; gap: 0; overflow-x: auto; padding-bottom: 2px;
+    }
+    .stop-chip {
+      display: flex; flex-direction: column; align-items: center;
+      min-width: 90px; position: relative;
+    }
+    .stop-chip + .stop-chip::before {
+      content: ''; position: absolute;
+      top: 9px; left: -50%; width: 100%;
+      height: 2px; background: var(--border2); z-index: 0;
+    }
+    .stop-dot {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--surface3); border: 2px solid var(--border2);
+      position: relative; z-index: 1; flex-shrink: 0;
+      transition: all 0.3s;
+    }
+    .stop-dot.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 12px rgba(108,99,255,0.5); }
+    .stop-dot.passed { background: var(--green); border-color: var(--green); }
+    .stop-name { font-size: 9.5px; color: var(--text-3); margin-top: 5px; text-align: center; white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+  </style>
 </head>
 <body>
-  <div class="layout">
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <div class="sidebar-header">
-        <span class="logo">🚌</span>
-        <div>
-          <h1>Bus Tracker</h1>
-          <p>Live Fleet View</p>
-        </div>
-      </div>
+<div class="layout">
 
-      <div class="sidebar-section">
-        <h2>Active Buses</h2>
-        <div id="busList">
-          <p style="color:var(--muted);font-size:13px;">Connecting…</p>
-        </div>
+  <!-- ── Sidebar ── -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-mark">🚌</div>
+      <div>
+        <h1>BusGo</h1>
+        <p>Live Fleet View</p>
       </div>
-
-      <div class="sidebar-section" style="margin-top:auto;">
-        <a href="index.html" class="btn btn-ghost" style="width:100%;justify-content:center;">
-          ← Home
-        </a>
+      <div class="connection-status">
+        <div class="live-dot" id="connDot" style="background:var(--amber);box-shadow:none;"></div>
+        <span id="connLabel">Connecting</span>
       </div>
     </div>
 
-    <!-- Map + info -->
-    <div class="map-wrap" style="display:flex;flex-direction:column;">
-      <div id="map" style="flex:1;"></div>
-      <div class="info-bar">
-        <div class="info-stat">
-          <span class="label">Selected Bus</span>
-          <span class="value" id="busName">—</span>
+    <!-- Quick stats -->
+    <div class="quick-stats">
+      <div class="quick-stat">
+        <div class="qs-val" id="qsTotal">—</div>
+        <div class="qs-lbl">Buses</div>
+      </div>
+      <div class="quick-stat">
+        <div class="qs-val" style="color:var(--green)" id="qsRunning">—</div>
+        <div class="qs-lbl">Running</div>
+      </div>
+    </div>
+
+    <!-- Selected bus card -->
+    <div class="selected-bus-card" id="selectedBusCard">
+      <div class="sbc-header">
+        <div class="logo-mark" style="width:34px;height:34px;font-size:16px;" id="sbcIcon">🚌</div>
+        <div>
+          <div class="sbc-name" id="sbcName">—</div>
+          <div class="sbc-route" id="sbcRoute">—</div>
         </div>
-        <div class="info-stat">
-          <span class="label">Status</span>
-          <span class="value" id="status">—</span>
+        <span id="sbcBadge"></span>
+      </div>
+      <div class="sbc-stats">
+        <div class="sbc-stat">
+          <div class="sbc-stat-label">Speed</div>
+          <div class="sbc-stat-value" id="sbcSpeed">—</div>
         </div>
-        <div class="info-stat">
-          <span class="label">Speed</span>
-          <span class="value" id="speed">—</span>
+        <div class="sbc-stat">
+          <div class="sbc-stat-label">Distance</div>
+          <div class="sbc-stat-value" id="sbcDist">—</div>
         </div>
-        <div class="info-stat">
-          <span class="label">Distance to Stop</span>
-          <span class="value" id="dist">—</span>
+      </div>
+      <div class="sbc-eta-bar">
+        <div class="sbc-eta-label">ETA to College Gate: <span id="sbcEta">—</span></div>
+        <div class="eta-track"><div class="eta-fill" id="sbcEtaBar" style="width:50%"></div></div>
+      </div>
+    </div>
+
+    <!-- Bus list -->
+    <div class="sidebar-body">
+      <span class="section-label">All Buses</span>
+      <div id="busList">
+        <div class="empty-state">
+          <div class="empty-icon">🚌</div>
+          <div class="empty-title">Connecting...</div>
+          <div class="empty-sub">Fetching fleet data</div>
         </div>
-        <div class="info-stat">
-          <span class="label">ETA</span>
-          <span class="value" id="eta">—</span>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <a href="index.html" class="btn btn-ghost" style="width:100%;justify-content:center;">
+        ← Back to Home
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Map ── -->
+  <div class="map-wrap">
+    <div id="map" style="width:100%;height:100%;"></div>
+
+    <!-- Locate FAB -->
+    <div class="map-fab map-locate-btn" onclick="locateMe()" title="Find my location">📍</div>
+
+    <!-- Info panel -->
+    <div class="info-panel" style="position:absolute;bottom:0;left:0;right:0;z-index:500;background:linear-gradient(0deg,var(--surface) 0%,rgba(17,17,24,0.97) 100%);border-top:1px solid var(--border);backdrop-filter:blur(20px);">
+
+      <!-- Top row: bus info + stats -->
+      <div class="info-panel-top">
+        <div style="flex:1;">
+          <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:3px;">Selected Bus</div>
+          <div id="busName" style="font-family:'Sora',sans-serif;font-size:16px;font-weight:800;">—</div>
         </div>
-        <div class="info-stat">
-          <span class="label">Last Update</span>
-          <span class="value" id="lastUpdate">—</span>
+        <div class="info-panel-stats">
+          <div class="info-stat">
+            <span class="label">Status</span>
+            <span class="value" id="status">—</span>
+          </div>
+          <div class="info-stat">
+            <span class="label">Speed</span>
+            <span class="value" id="speed">—</span>
+          </div>
+          <div class="info-stat">
+            <span class="label">ETA</span>
+            <span class="value" id="eta" style="color:var(--accent);">—</span>
+          </div>
+          <div class="info-stat">
+            <span class="label">Distance</span>
+            <span class="value" id="dist">—</span>
+          </div>
+          <div class="info-stat">
+            <span class="label">Updated</span>
+            <span class="value" id="lastUpdate">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Route stops strip -->
+      <div>
+        <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;">Route Stops</div>
+        <div class="stops-strip" id="stopsStrip">
+          <div style="color:var(--text-3);font-size:12px;">Select a bus to see stops</div>
         </div>
       </div>
     </div>
   </div>
+</div>
 
-  <div id="toast-container"></div>
+<div id="toast-container"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="js/student.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script src="js/student.js"></script>
 </body>
 </html>

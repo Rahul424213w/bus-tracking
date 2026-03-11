@@ -3,30 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Driver Login – Bus Tracker</title>
+  <title>BusGo – Driver Login</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <div class="login-page">
     <div class="login-box">
-      <div class="logo-big">🚗</div>
+      <div class="login-logo" style="background:linear-gradient(135deg,#22c55e,#16a34a);">🚌</div>
       <h1>Driver Login</h1>
-      <p>Enter your credentials to access the driver dashboard</p>
+      <p class="subtitle">Enter your credentials to share your location</p>
 
       <div class="form-group">
-        <label class="form-label" for="pass">Password</label>
+        <label class="form-label" for="pass">Driver Password</label>
         <input class="input" id="pass" type="password" placeholder="Enter driver password"
                autocomplete="current-password">
       </div>
 
-      <button class="login-btn" id="loginBtn" onclick="login()">Sign In</button>
+      <button class="login-btn" id="loginBtn" onclick="login()"
+        style="background:linear-gradient(135deg,#22c55e,#16a34a);box-shadow:0 4px 24px rgba(34,197,94,0.4);">
+        Sign In →
+      </button>
       <div class="error-msg" id="err"></div>
       <a class="back-link" href="index.html">← Back to Home</a>
     </div>
   </div>
 
   <script>
-    // Check if already logged in
     if (sessionStorage.getItem("driverToken")) location.href = "driver.html";
 
     async function login() {
@@ -34,11 +36,15 @@
       const btn  = document.getElementById("loginBtn");
       const err  = document.getElementById("err");
 
-      if (!pass) { err.textContent = "Please enter a password."; return; }
+      if (!pass) {
+        err.textContent = "Please enter a password.";
+        err.classList.add("show");
+        return;
+      }
 
-      btn.textContent = "Signing in…";
+      btn.innerHTML = '<span class="spinner"></span> Signing in…';
       btn.disabled = true;
-      err.textContent = "";
+      err.classList.remove("show");
 
       try {
         const res  = await fetch("/api/login", {
@@ -50,15 +56,18 @@
 
         if (data.ok) {
           sessionStorage.setItem("driverToken", data.token);
-          location.href = "driver.html";
+          btn.innerHTML = "✓ Success!";
+          setTimeout(() => location.href = "driver.html", 300);
         } else {
           err.textContent = "❌ " + (data.error || "Invalid credentials");
-          btn.textContent = "Sign In";
+          err.classList.add("show");
+          btn.textContent = "Sign In →";
           btn.disabled = false;
         }
       } catch (e) {
         err.textContent = "❌ Server error. Try again.";
-        btn.textContent = "Sign In";
+        err.classList.add("show");
+        btn.textContent = "Sign In →";
         btn.disabled = false;
       }
     }
