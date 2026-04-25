@@ -18,17 +18,18 @@
     "lng": 74.4665375,
     "status": "stopped",
     "speed": 0,
-    "lastUpdate": null
+    "lastUpdate": 1775449207418,
+    "driverSocket": "GFGClNVGyKY9s2TyAAAB"
   },
   {
     "id": "bus1",
     "name": "Bus 1 - West Route",
     "route": "north",
-    "lat": 15.8624815,
-    "lng": 74.46656,
+    "lat": 15.821811254119421,
+    "lng": 74.4890304661967,
     "status": "running",
     "speed": 0,
-    "lastUpdate": 1773252748486,
-    "driverSocket": "trlEmWeSQvif9X7sAAAD"
+    "lastUpdate": 1775449248120,
+    "driverSocket": "kV7HK4KdxgHkEdPaAAAJ"
   }
 ]

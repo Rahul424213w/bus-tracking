@@ -45,5 +45,13 @@
   "327ff1373cda882b9bfa47a0a370392b06ebd67bb1009f5d9abf2ee84cf27ebf": {
     "role": "admin",
     "ts": 1773252757586
+  },
+  "2f362635433a1a2c1701b48660a4acb37e081a6f1ab6eb8e5973f13a71e89658": {
+    "role": "admin",
+    "ts": 1775449216582
+  },
+  "549df728866285acf2007df06b36d2bbf727218d3a8d8c51f1d8b6b2c7ead35c": {
+    "role": "driver",
+    "ts": 1775449239765
   }
 }
